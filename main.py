@@ -4,21 +4,27 @@ import pygame
 class Inicio:
     def __init__(self):
         pygame.init()
+        # Tamaño de la celda y el numero de celdas
         self.cell_size = 40
         self.cell_number = 13
+        # Colores
         self.verde_oscuro = (142, 204, 58)
         self.verde_claro = (167, 217, 73)
         self.azul = (79, 134, 198)
+
+        # Crear la ventana
         self.ventana = pygame.display.set_mode(
             (
                 self.cell_number * self.cell_size,
                 self.cell_number * self.cell_size,
             )
         )
+        # Titulo de la ventana
         pygame.display.set_caption("Snake Game")
         self.ventana.fill(self.verde_oscuro)
 
     def patron_tablero(self):
+        """Patron de tablero de ajedrez en la ventana."""
         for row in range(self.cell_number):
             for col in range(self.cell_number):
                 if (row + col) % 2 == 0:
