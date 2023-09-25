@@ -1,3 +1,5 @@
+import random
+
 import pygame
 from pygame.math import Vector2
 
@@ -71,6 +73,17 @@ class Food:
         # Dibujar el rectangulo
         self.azul = (79, 134, 198)
         pygame.draw.rect(surface, self.azul, comida_rect)
+
+    def randomize(self, posicion_serpiente):
+        """Cambiar la posición de la comida de forma aleatoria."""
+        self.x = random.randint(0, 12) * self.cell_size
+        self.y = random.randint(0, 12) * self.cell_size
+
+        # Verificar que la comida no se genere en la serpiente
+        if Vector2(self.x, self.y) in posicion_serpiente:
+            self.randomize(posicion_serpiente)
+        else:
+            self.posicion = Vector2(self.x, self.y)
 
 
 if __name__ == "__main__":
