@@ -1,102 +1,197 @@
 import random
-
 import pygame
 from pygame.math import Vector2
 
+# Inicialización de Pygame
+pygame.init()
 
-class Inicio:
+# Tamaño de la celda y el número de celdas
+tamaño_celda = 40
+numero_celdas = 13
+
+# Colores
+verde_oscuro = (142, 204, 58)
+verde_claro = (167, 217, 73)
+azul = (79, 134, 198)
+blanco = (255, 255, 255)
+rojo = (255, 0, 0)
+
+# Direcciones
+ARRIBA = Vector2(0, -1)
+ABAJO = Vector2(0, 1)
+IZQUIERDA = Vector2(-1, 0)
+DERECHA = Vector2(1, 0)
+
+
+class Serpiente:
     def __init__(self):
-        pygame.init()
-
-        # Reloj
-        self.clock = pygame.time.Clock()
-
-        # Tamaño de la celda y el numero de celdas
-        self.cell_size = 40
-        self.cell_number = 13
-        # Colores
-        self.verde_oscuro = (142, 204, 58)
-        self.verde_claro = (167, 217, 73)
-        self.azul = (79, 134, 198)
-
-        # Crear la ventana
-        self.ventana = pygame.display.set_mode(
-            (
-                self.cell_number * self.cell_size,
-                self.cell_number * self.cell_size,
-            )
-        )
-        # Titulo de la ventana
-        pygame.display.set_caption("Snake Game")
-        self.ventana.fill(self.verde_oscuro)
-
-    def patron_tablero(self):
-        """Patron de tablero de ajedrez en la ventana."""
-        for row in range(self.cell_number):
-            for col in range(self.cell_number):
-                if (row + col) % 2 == 0:
-                    cuadrado = pygame.Rect(
-                        col * self.cell_size,
-                        row * self.cell_size,
-                        self.cell_size,
-                        self.cell_size,
-                    )
-                    pygame.draw.rect(self.ventana, self.verde_claro, cuadrado)
-
-
-class Game:
-    pass
-
-
-class Snake:
-    pass
-
-
-class Food:
-    def __init__(self, cell_size=40):
-        """Inicializar la comida.
-        Trabaja con coordenadas en vectores.
-        La posición toca multiplicarla por el tamaño de la celda.
+        """Inicializar la serpiente.
+        La serpiente es una lista de vectores que representan cada segmento
+        del cuerpo. El primer elemento es la cabeza de la serpiente.
+        - Eficiencia: O(1) pues el tamaño de la serpiente es constante.
         """
-        # Crear coordenadas de inicio de la comida
-        self.cell_size = cell_size
-        self.x = 10 * cell_size
-        self.y = 2 * cell_size
-        self.posicion = Vector2(self.x, self.y)
+        self.cuerpo = [Vector2(6, 6), Vector2(4, 5), Vector2(3, 5)]
+        self.direccion = ARRIBA
+        self.nueva_parte = False
 
-    def dibujar_comida(self, surface):
-        """Dibujar la comida en la ventana."""
-        # Crear un rectangulo para la comida
-        comida_rect = pygame.Rect(
-            self.posicion.x, self.posicion.y, self.cell_size, self.cell_size
-        )
-        # Dibujar el rectangulo
-        self.azul = (79, 134, 198)
-        pygame.draw.rect(surface, self.azul, comida_rect)
-
-    def randomize(self, posicion_serpiente):
-        """Cambiar la posición de la comida de forma aleatoria."""
-        self.x = random.randint(0, 12) * self.cell_size
-        self.y = random.randint(0, 12) * self.cell_size
-
-        # Verificar que la comida no se genere en la serpiente
-        if Vector2(self.x, self.y) in posicion_serpiente:
-            self.randomize(posicion_serpiente)
+    def mover(self):
+        """Mover la serpiente.
+        La serpiente se mueve insertando una nueva cabeza en la dirección
+        actual y eliminando la cola.
+        - Eficiencia: O(1) pues se inserta y se elimina un elemento de la
+        lista siempre en los extremos."""
+        if not self.nueva_parte:
+            self.cuerpo.pop()
         else:
-            self.posicion = Vector2(self.x, self.y)
+            self.nueva_parte = False
+
+        nueva_cabeza = self.cuerpo[0] + self.direccion
+        self.cuerpo.insert(0, nueva_cabeza)
+
+    def colision_pared(self):
+        """Verificar si la serpiente chocó con la pared.
+        Comprueba si la cabeza de la serpiente está fuera de los límites del
+        tablero.
+        - Eficiencia: O(1) pues se accede a los elementos de la lista por
+        índice.
+        """
+        cabeza = self.cuerpo[0]
+        return (
+            cabeza.x < 0
+            or cabeza.x >= numero_celdas
+            or cabeza.y < 0
+            or cabeza.y >= numero_celdas
+        )
+
+    def colision_cuerpo(self):
+        """Verificar si la serpiente chocó con su cuerpo.
+        Comprueba si la cabeza de la serpiente está en el cuerpo.
+        - Eficiencia: O(n) pues se recorre la lista de la serpiente.
+        Aunque por anális amortizado es O(1) pues la serpiente es de tamaño
+        constante."""
+        return self.cuerpo[0] in self.cuerpo[1:]
+
+    def comer(self, comida):
+        """Verificar si la serpiente comió.
+        Comprueba si la cabeza de la serpiente está en la posición de la
+        comida.
+        - Eficiencia: O(1) pues se accede a los elementos de la lista por
+        índice."""
+        if self.cuerpo[0] == comida.posicion:
+            comida.posicion = comida.posicion_aleatoria()
+            self.nueva_parte = True
+
+
+class Comida:
+    def __init__(self):
+        """Inicializar la comida."""
+        # Posición inicial de la comida
+        self.posicion = Vector2(10, 2)
+
+    def posicion_aleatoria(self):
+        x = random.randint(0, numero_celdas - 1)
+        y = random.randint(0, numero_celdas - 1)
+        return Vector2(x, y)
+
+
+class Tablero:
+    def __init__(self):
+        self.pantalla = pygame.display.set_mode(
+            (numero_celdas * tamaño_celda, numero_celdas * tamaño_celda)
+        )
+        pygame.display.set_caption("Juego de la Serpiente")
+        self.font = pygame.font.Font(None, 36)
+        self.patron = self.generar_patron_tablero()
+
+    def generar_patron_tablero(self):
+        patron = pygame.Surface(self.pantalla.get_size())
+        patron.fill(verde_oscuro)  # Llena con el color de fondo oscuro
+        for fila in range(numero_celdas):
+            for columna in range(numero_celdas):
+                if (fila + columna) % 2 == 0:
+                    cuadrado = pygame.Rect(
+                        columna * tamaño_celda,
+                        fila * tamaño_celda,
+                        tamaño_celda,
+                        tamaño_celda,
+                    )
+                    pygame.draw.rect(patron, verde_claro, cuadrado)
+        return patron
+
+    def actualizar_pantalla(self, serpiente, comida, perdio):
+        self.pantalla.blit(self.patron, (0, 0))
+        comida_rect = pygame.Rect(
+            comida.posicion.x * tamaño_celda,
+            comida.posicion.y * tamaño_celda,
+            tamaño_celda,
+            tamaño_celda,
+        )
+        pygame.draw.rect(self.pantalla, azul, comida_rect)
+        for segmento in serpiente.cuerpo:
+            serpiente_rect = pygame.Rect(
+                segmento.x * tamaño_celda,
+                segmento.y * tamaño_celda,
+                tamaño_celda,
+                tamaño_celda,
+            )
+            pygame.draw.rect(self.pantalla, rojo, serpiente_rect)
+        if perdio:
+            mensaje = self.font.render(
+                "¡Perdiste! Presiona R para reiniciar.", True, blanco
+            )
+            mensaje_rect = mensaje.get_rect(
+                center=(
+                    self.pantalla.get_width() // 2,
+                    self.pantalla.get_height() // 2,
+                )
+            )
+            self.pantalla.blit(mensaje, mensaje_rect)
+
+        pygame.display.flip()
+
+
+def main():
+    tablero = Tablero()
+    serpiente = Serpiente()
+    comida = Comida()
+    jugando = True
+    perdio = False
+    reloj = pygame.time.Clock()
+
+    while jugando:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                jugando = False
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_r:
+                    # Reiniciar el juego
+                    serpiente = Serpiente()
+                    comida = Comida()
+                    perdio = False
+
+        if not perdio:
+            teclas = pygame.key.get_pressed()
+            if teclas[pygame.K_UP] and serpiente.direccion != ABAJO:
+                serpiente.direccion = ARRIBA
+            elif teclas[pygame.K_DOWN] and serpiente.direccion != ARRIBA:
+                serpiente.direccion = ABAJO
+            elif teclas[pygame.K_LEFT] and serpiente.direccion != DERECHA:
+                serpiente.direccion = IZQUIERDA
+            elif teclas[pygame.K_RIGHT] and serpiente.direccion != IZQUIERDA:
+                serpiente.direccion = DERECHA
+
+            serpiente.mover()
+
+            if serpiente.colision_pared() or serpiente.colision_cuerpo():
+                perdio = True
+
+            serpiente.comer(comida)
+
+        tablero.actualizar_pantalla(serpiente, comida, perdio)
+        reloj.tick(9)
+
+    pygame.quit()
 
 
 if __name__ == "__main__":
-    # Inicializar el juego
-    inicio = Inicio()
-    inicio.patron_tablero()
-
-    # Dibujar la comida
-    comida = Food()
-    comida.dibujar_comida(inicio.ventana)
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-        pygame.display.update()
+    main()
