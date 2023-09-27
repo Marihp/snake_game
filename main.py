@@ -67,8 +67,7 @@ class Serpiente:
         """Verificar si la serpiente chocó con su cuerpo.
         Comprueba si la cabeza de la serpiente está en el cuerpo.
         - Eficiencia: O(n) pues se recorre la lista de la serpiente.
-        Aunque por anális amortizado es O(1) pues la serpiente es de tamaño
-        constante."""
+        """
         return self.cuerpo[0] in self.cuerpo[1:]
 
     def comer(self, comida):
