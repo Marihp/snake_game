@@ -140,6 +140,9 @@ class Tablero:
         )
         pygame.display.set_caption("Juego de la Serpiente")
         self.font = pygame.font.Font(None, 36)
+
+        self.movimientos_desde_comida = 0
+        self.max_movimientos_sin_comer = random.randint(1, 10)
         # Creamos el patrón de cuadrícula
         self.patron = self.generar_patron_tablero()
         self.pantalla.blit(self.patron, (0, 0))
@@ -175,16 +178,9 @@ class Tablero:
         - Eficiencia: O(1) ya que solo actualiza la cola y la cabeza en cada
           iteración.
         """
-        comida_rect = pygame.Rect(
-            comida.posicion.x * tamaño_celda,
-            comida.posicion.y * tamaño_celda,
-            tamaño_celda,
-            tamaño_celda,
-        )
-        pygame.draw.rect(self.pantalla, azul, comida_rect)
-
         # Borramos la cola
         if not serpiente.nueva_parte:
+            self.movimientos_desde_comida += 1  # Ciclos que no hemos comido
             cola_rect = pygame.Rect(
                 serpiente.ultima_cola.x * tamaño_celda,
                 serpiente.ultima_cola.y * tamaño_celda,
@@ -195,6 +191,18 @@ class Tablero:
                 pygame.draw.rect(self.pantalla, verde_claro, cola_rect)
             else:
                 pygame.draw.rect(self.pantalla, verde_oscuro, cola_rect)
+        else:
+            self.movimientos_desde_comida = 0
+            self.max_movimientos_sin_comer = random.randint(1, 10)
+
+        if self.movimientos_desde_comida >= self.max_movimientos_sin_comer:
+            comida_rect = pygame.Rect(
+                comida.posicion.x * tamaño_celda,
+                comida.posicion.y * tamaño_celda,
+                tamaño_celda,
+                tamaño_celda,
+            )
+            pygame.draw.rect(self.pantalla, azul, comida_rect)
 
         # Dibujamos la cabeza
         cabeza_rect = pygame.Rect(
