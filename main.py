@@ -10,6 +10,8 @@ pygame.init()
 # Tamaño de la celda y el número de celdas
 tamaño_celda = 40
 numero_celdas = 13
+posibles_posiciones = deque([Vector2(x, y) for x in range(
+    numero_celdas) for y in range(numero_celdas)])
 
 # Colores
 verde_oscuro = (142, 204, 58)
@@ -48,7 +50,7 @@ class Serpiente:
             self.nueva_parte = False
 
         nueva_cabeza = self.cuerpo[0] + self.direccion
-        self.cuerpo.insert(0, nueva_cabeza)
+        self.cuerpo.appendleft(nueva_cabeza)
 
     def colision_pared(self):
         """Verificar si la serpiente chocó con la pared.
@@ -79,7 +81,7 @@ class Serpiente:
         - Eficiencia: O(1) pues se accede a los elementos de la lista por
         índice."""
         if self.cuerpo[0] == comida.posicion:
-            comida.posicion = comida.posicion_aleatoria()
+            comida.posicion = comida.posicion_aleatoria(self.cuerpo)
             self.nueva_parte = True
 
 
@@ -89,10 +91,25 @@ class Comida:
         # Posición inicial de la comida
         self.posicion = Vector2(10, 2)
 
-    def posicion_aleatoria(self):
-        x = random.randint(0, numero_celdas - 1)
-        y = random.randint(0, numero_celdas - 1)
-        return Vector2(x, y)
+    def posicion_aleatoria(self, no_permitidos):
+        def diferencia_entre_deques(deque1, deque2):
+            # Crea un deque vacío para almacenar el resultado
+            resultado = deque()
+
+            # Convierte el deque2 en una lista para acelerar la búsqueda
+            lista_deque2 = list(deque2)
+
+            # Itera a través de los elementos en el deque1
+            for elemento in deque1:
+                # Verifica si el elemento está en deque2
+                if elemento not in lista_deque2:
+                    resultado.append(elemento)
+
+            return resultado
+
+        lista_posibles = diferencia_entre_deques(
+            posibles_posiciones, no_permitidos)
+        return random.choice(lista_posibles)
 
 
 class Tablero:
