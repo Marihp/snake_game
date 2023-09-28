@@ -1,5 +1,7 @@
 import random
 import pygame
+from collections import deque
+from itertools import islice
 from pygame.math import Vector2
 
 # Inicialización de Pygame
@@ -30,7 +32,7 @@ class Serpiente:
         del cuerpo. El primer elemento es la cabeza de la serpiente.
         - Eficiencia: O(1) pues el tamaño de la serpiente es constante.
         """
-        self.cuerpo = [Vector2(6, 6), Vector2(4, 5), Vector2(3, 5)]
+        self.cuerpo = deque([Vector2(6, 6), Vector2(4, 5), Vector2(3, 5)])
         self.direccion = ARRIBA
         self.nueva_parte = False
 
@@ -68,7 +70,7 @@ class Serpiente:
         Comprueba si la cabeza de la serpiente está en el cuerpo.
         - Eficiencia: O(n) pues se recorre la lista de la serpiente.
         """
-        return self.cuerpo[0] in self.cuerpo[1:]
+        return self.cuerpo[0] in islice(self.cuerpo, 1, None)
 
     def comer(self, comida):
         """Verificar si la serpiente comió.
