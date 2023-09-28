@@ -228,6 +228,42 @@ class Tablero:
         pygame.display.flip()
 
 
+def mostrar_instrucciones():
+    instrucciones = True
+    instrucciones_pantalla = pygame.display.set_mode((520, 520))
+    pygame.display.set_caption("Instrucciones")
+
+    while instrucciones:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif evento.type == pygame.KEYDOWN:
+                instrucciones = False
+
+        negro = (0, 0, 0)
+        instrucciones_pantalla.fill(negro)
+        font = pygame.font.Font(None, 30)
+        texto = font.render("Instrucciones:", True, blanco)
+        texto2 = font.render(" - Usa las flechas para moverte.", True, blanco)
+        texto3 = font.render(
+            "- Come la comida para crecer una unidad.", True, blanco
+        )
+        texto4 = font.render("¡Evita chocar con las paredes", True, blanco)
+        texto5 = font.render("y con tu propio cuerpo!", True, blanco)
+
+        inicio = font.render(
+            "Presiona cualquier tecla para iniciar", True, azul
+        )
+        instrucciones_pantalla.blit(texto, (20, 20))
+        instrucciones_pantalla.blit(texto2, (20, 60))
+        instrucciones_pantalla.blit(texto3, (20, 100))
+        instrucciones_pantalla.blit(texto4, (20, 140))
+        instrucciones_pantalla.blit(texto5, (20, 160))
+        instrucciones_pantalla.blit(inicio, (80, 200))
+        pygame.display.update()
+
+
 def main():
     serpiente = Serpiente()
     tablero = Tablero(serpiente)
@@ -273,4 +309,5 @@ def main():
 
 
 if __name__ == "__main__":
+    mostrar_instrucciones()
     main()
