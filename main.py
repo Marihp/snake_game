@@ -7,20 +7,20 @@ from pygame.math import Vector2
 # Inicialización de Pygame
 pygame.init()
 
-# Tamaño de la celda y el número de celdas
+# Tamaño de la celda y el número de celdas en el tablero
 tamaño_celda = 40
 numero_celdas = 13
 posibles_posiciones = deque([Vector2(x, y) for x in range(
     numero_celdas) for y in range(numero_celdas)])
 
-# Colores
+# Definición de colores utilizados en el juego
 verde_oscuro = (142, 204, 58)
 verde_claro = (167, 217, 73)
 azul = (79, 134, 198)
 blanco = (255, 255, 255)
 rojo = (255, 0, 0)
 
-# Direcciones
+# Direcciones posibles para la serpiente
 ARRIBA = Vector2(0, -1)
 ABAJO = Vector2(0, 1)
 IZQUIERDA = Vector2(-1, 0)
@@ -29,10 +29,13 @@ DERECHA = Vector2(1, 0)
 
 class Serpiente:
     def __init__(self):
-        """Inicializar la serpiente.
-        La serpiente es una lista de vectores que representan cada segmento
-        del cuerpo. El primer elemento es la cabeza de la serpiente.
-        - Eficiencia: O(1) pues el tamaño de la serpiente es constante.
+        """Inicializa la serpiente.
+
+        La serpiente se representa como una lista de vectores, donde cada
+        vector representa un segmento del cuerpo. El primer elemento de la
+        lista es la cabeza de la serpiente.
+
+        - Eficiencia: O(1) ya que el tamaño de la serpiente es constante.
         """
         self.cuerpo = deque([Vector2(4, 4), Vector2(4, 5), Vector2(3, 5)])
         self.ultima_cola = Vector2(3, 5)
@@ -40,11 +43,14 @@ class Serpiente:
         self.nueva_parte = False
 
     def mover(self):
-        """Mover la serpiente.
+        """Mueve la serpiente.
+
         La serpiente se mueve insertando una nueva cabeza en la dirección
         actual y eliminando la cola.
-        - Eficiencia: O(1) pues se inserta y se elimina un elemento de la
-        lista siempre en los extremos."""
+
+        - Eficiencia: O(1) ya que se inserta y elimina elementos de la lista
+          siempre en los extremos.
+        """
         if not self.nueva_parte:
             self.ultima_cola = self.cuerpo.pop()
         else:
@@ -54,11 +60,13 @@ class Serpiente:
         self.cuerpo.appendleft(nueva_cabeza)
 
     def colision_pared(self):
-        """Verificar si la serpiente chocó con la pared.
+        """Verifica si la serpiente chocó con la pared.
+
         Comprueba si la cabeza de la serpiente está fuera de los límites del
         tablero.
-        - Eficiencia: O(1) pues se accede a los elementos de la lista por
-        índice.
+
+        - Eficiencia: O(1) ya que se accede a los elementos de la lista por
+          índice.
         """
         cabeza = self.cuerpo[0]
         return (
@@ -69,18 +77,23 @@ class Serpiente:
         )
 
     def colision_cuerpo(self):
-        """Verificar si la serpiente chocó con su cuerpo.
+        """Verifica si la serpiente chocó con su propio cuerpo.
+
         Comprueba si la cabeza de la serpiente está en el cuerpo.
-        - Eficiencia: O(n) pues se recorre la lista de la serpiente.
+
+        - Eficiencia: O(n) ya que se recorre la lista de la serpiente.
         """
         return self.cuerpo[0] in islice(self.cuerpo, 1, None)
 
     def comer(self, comida):
-        """Verificar si la serpiente comió.
+        """Verifica si la serpiente ha comido la comida.
+
         Comprueba si la cabeza de la serpiente está en la posición de la
-        comida.
-        - Eficiencia: O(1) pues se accede a los elementos de la lista por
-        índice."""
+        comida y actualiza la posición de la comida de ser necesario.
+
+        - Eficiencia: O(1) ya que se accede a los elementos de la lista por
+          índice.
+        """
         if self.cuerpo[0] == comida.posicion:
             comida.posicion = comida.posicion_aleatoria(self.cuerpo)
             self.nueva_parte = True
@@ -88,11 +101,17 @@ class Serpiente:
 
 class Comida:
     def __init__(self):
-        """Inicializar la comida."""
+        """Inicializa la comida."""
         # Posición inicial de la comida
         self.posicion = Vector2(10, 2)
 
     def posicion_aleatoria(self, no_permitidos):
+        """Retorna un Vector2 con una posición aleatoria que no está en el
+        cuerpo de la serpiente.
+
+        - Eficiencia: O(n) donde n es el tamaño del tablero, aunque en este
+          caso es O(1) ya que el tablero tiene un tamaño fijo.
+        """
         def diferencia_entre_deques(deque1, deque2):
             # Crea un deque vacío para almacenar el resultado
             resultado = deque()
@@ -102,7 +121,7 @@ class Comida:
 
             # Itera a través de los elementos en el deque1
             for elemento in deque1:
-                # Verifica si el elemento está en deque2
+                # Verifica si el elemento no está en deque2
                 if elemento not in lista_deque2:
                     resultado.append(elemento)
 
@@ -115,13 +134,16 @@ class Comida:
 
 class Tablero:
     def __init__(self, serpiente):
+        """Inicia el tablero del juego con una serpiente y una cuadrícula."""
         self.pantalla = pygame.display.set_mode(
             (numero_celdas * tamaño_celda, numero_celdas * tamaño_celda)
         )
         pygame.display.set_caption("Juego de la Serpiente")
         self.font = pygame.font.Font(None, 36)
+        # Creamos el patrón de cuadrícula
         self.patron = self.generar_patron_tablero()
         self.pantalla.blit(self.patron, (0, 0))
+        # Dibujamos la serpiente inicialmente
         for segmento in serpiente.cuerpo:
             serpiente_rect = pygame.Rect(
                 segmento.x * tamaño_celda,
@@ -132,6 +154,7 @@ class Tablero:
             pygame.draw.rect(self.pantalla, rojo, serpiente_rect)
 
     def generar_patron_tablero(self):
+        """Crea una cuadrícula en la pantalla."""
         patron = pygame.Surface(self.pantalla.get_size())
         patron.fill(verde_oscuro)  # Llena con el color de fondo oscuro
         for fila in range(numero_celdas):
@@ -147,6 +170,11 @@ class Tablero:
         return patron
 
     def actualizar_pantalla(self, serpiente, comida, perdio):
+        """Refresca la pantalla del juego.
+
+        - Eficiencia: O(1) ya que solo actualiza la cola y la cabeza en cada
+          iteración.
+        """
         comida_rect = pygame.Rect(
             comida.posicion.x * tamaño_celda,
             comida.posicion.y * tamaño_celda,
