@@ -35,6 +35,7 @@ class Serpiente:
         - Eficiencia: O(1) pues el tamaño de la serpiente es constante.
         """
         self.cuerpo = deque([Vector2(4, 4), Vector2(4, 5), Vector2(3, 5)])
+        self.ultima_cola = Vector2(3, 5)
         self.direccion = ARRIBA
         self.nueva_parte = False
 
@@ -45,7 +46,7 @@ class Serpiente:
         - Eficiencia: O(1) pues se inserta y se elimina un elemento de la
         lista siempre en los extremos."""
         if not self.nueva_parte:
-            self.cuerpo.pop()
+            self.ultima_cola = self.cuerpo.pop()
         else:
             self.nueva_parte = False
 
@@ -113,13 +114,22 @@ class Comida:
 
 
 class Tablero:
-    def __init__(self):
+    def __init__(self, serpiente):
         self.pantalla = pygame.display.set_mode(
             (numero_celdas * tamaño_celda, numero_celdas * tamaño_celda)
         )
         pygame.display.set_caption("Juego de la Serpiente")
         self.font = pygame.font.Font(None, 36)
         self.patron = self.generar_patron_tablero()
+        self.pantalla.blit(self.patron, (0, 0))
+        for segmento in serpiente.cuerpo:
+            serpiente_rect = pygame.Rect(
+                segmento.x * tamaño_celda,
+                segmento.y * tamaño_celda,
+                tamaño_celda,
+                tamaño_celda,
+            )
+            pygame.draw.rect(self.pantalla, rojo, serpiente_rect)
 
     def generar_patron_tablero(self):
         patron = pygame.Surface(self.pantalla.get_size())
@@ -137,7 +147,6 @@ class Tablero:
         return patron
 
     def actualizar_pantalla(self, serpiente, comida, perdio):
-        self.pantalla.blit(self.patron, (0, 0))
         comida_rect = pygame.Rect(
             comida.posicion.x * tamaño_celda,
             comida.posicion.y * tamaño_celda,
@@ -145,14 +154,29 @@ class Tablero:
             tamaño_celda,
         )
         pygame.draw.rect(self.pantalla, azul, comida_rect)
-        for segmento in serpiente.cuerpo:
-            serpiente_rect = pygame.Rect(
-                segmento.x * tamaño_celda,
-                segmento.y * tamaño_celda,
+
+        # Borramos la cola
+        if not serpiente.nueva_parte:
+            cola_rect = pygame.Rect(
+                serpiente.ultima_cola.x * tamaño_celda,
+                serpiente.ultima_cola.y * tamaño_celda,
                 tamaño_celda,
                 tamaño_celda,
             )
-            pygame.draw.rect(self.pantalla, rojo, serpiente_rect)
+            if (serpiente.ultima_cola.y + serpiente.ultima_cola.x) % 2 == 0:
+                pygame.draw.rect(self.pantalla, verde_claro, cola_rect)
+            else:
+                pygame.draw.rect(self.pantalla, verde_oscuro, cola_rect)
+
+        # Dibujamos la cabeza
+        cabeza_rect = pygame.Rect(
+            serpiente.cuerpo[0].x * tamaño_celda,
+            serpiente.cuerpo[0].y * tamaño_celda,
+            tamaño_celda,
+            tamaño_celda,
+        )
+        pygame.draw.rect(self.pantalla, rojo, cabeza_rect)
+
         if perdio:
             mensaje = self.font.render(
                 "¡Perdiste! Presiona R para reiniciar.", True, blanco
@@ -169,8 +193,8 @@ class Tablero:
 
 
 def main():
-    tablero = Tablero()
     serpiente = Serpiente()
+    tablero = Tablero(serpiente)
     comida = Comida()
     jugando = True
     perdio = False
@@ -185,6 +209,7 @@ def main():
                     # Reiniciar el juego
                     serpiente = Serpiente()
                     comida = Comida()
+                    tablero.pantalla.blit(tablero.patron, (0, 0))
                     perdio = False
 
         if not perdio:
