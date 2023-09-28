@@ -303,7 +303,7 @@ def main():
             serpiente.comer(comida)
 
         tablero.actualizar_pantalla(serpiente, comida, perdio)
-        reloj.tick(9)
+        reloj.tick(10)
 
     pygame.quit()
 
