@@ -37,8 +37,8 @@ class Serpiente:
 
         - Eficiencia: O(1) ya que el tamaño de la serpiente es constante.
         """
-        self.cuerpo = deque([Vector2(4, 4), Vector2(4, 5), Vector2(3, 5)])
-        self.ultima_cola = Vector2(3, 5)
+        self.cuerpo = deque([Vector2(5, 8), Vector2(5, 9), Vector2(5, 10)])
+        self.ultima_cola = Vector2(5, 10)
         self.direccion = ARRIBA
         self.nueva_parte = False
 
@@ -142,7 +142,7 @@ class Tablero:
         self.font = pygame.font.Font(None, 36)
 
         self.movimientos_desde_comida = 0
-        self.max_movimientos_sin_comer = random.randint(1, 10)
+        self.max_movimientos_sin_comer = 1
         # Creamos el patrón de cuadrícula
         self.patron = self.generar_patron_tablero()
         self.pantalla.blit(self.patron, (0, 0))
