@@ -34,7 +34,7 @@ class Serpiente:
         del cuerpo. El primer elemento es la cabeza de la serpiente.
         - Eficiencia: O(1) pues el tamaño de la serpiente es constante.
         """
-        self.cuerpo = deque([Vector2(6, 6), Vector2(4, 5), Vector2(3, 5)])
+        self.cuerpo = deque([Vector2(4, 4), Vector2(4, 5), Vector2(3, 5)])
         self.direccion = ARRIBA
         self.nueva_parte = False
 
