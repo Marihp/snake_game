@@ -10,8 +10,9 @@ pygame.init()
 # Tamaño de la celda y el número de celdas en el tablero
 tamaño_celda = 40
 numero_celdas = 13
-posibles_posiciones = deque([Vector2(x, y) for x in range(
-    numero_celdas) for y in range(numero_celdas)])
+posibles_posiciones = deque(
+    [Vector2(x, y) for x in range(numero_celdas) for y in range(numero_celdas)]
+)
 
 # Definición de colores utilizados en el juego
 verde_oscuro = (142, 204, 58)
@@ -41,6 +42,7 @@ class Serpiente:
         self.ultima_cola = Vector2(5, 10)
         self.direccion = ARRIBA
         self.nueva_parte = False
+        self.contador_manzanas = 0
 
     def mover(self):
         """Mueve la serpiente.
@@ -97,6 +99,7 @@ class Serpiente:
         if self.cuerpo[0] == comida.posicion:
             comida.posicion = comida.posicion_aleatoria(self.cuerpo)
             self.nueva_parte = True
+            self.contador_manzanas += 1
 
 
 class Comida:
@@ -112,6 +115,7 @@ class Comida:
         - Eficiencia: O(n) donde n es el tamaño del tablero, aunque en este
           caso es O(1) ya que el tablero tiene un tamaño fijo.
         """
+
         def diferencia_entre_deques(deque1, deque2):
             # Crea un deque vacío para almacenar el resultado
             resultado = deque()
@@ -128,7 +132,8 @@ class Comida:
             return resultado
 
         lista_posibles = diferencia_entre_deques(
-            posibles_posiciones, no_permitidos)
+            posibles_posiciones, no_permitidos
+        )
         return random.choice(lista_posibles)
 
 
@@ -171,6 +176,19 @@ class Tablero:
                     )
                     pygame.draw.rect(patron, verde_claro, cuadrado)
         return patron
+
+    def borrar_contador_anterior(self):
+        contador_rect = pygame.Rect(
+            10, 10, 30, 30
+        )  # Definimos un rectángulo para borrar el contador anterior
+        pygame.draw.rect(self.pantalla, verde_claro, contador_rect)
+
+    def mostrar_contador(self, serpiente):
+        self.borrar_contador_anterior()  # Borramos el contador anterior
+        contador_texto = self.font.render(
+            f"{serpiente.contador_manzanas}", True, (0, 0, 0)
+        )
+        self.pantalla.blit(contador_texto, (10, 10))
 
     def actualizar_pantalla(self, serpiente, comida, perdio):
         """Refresca la pantalla del juego.
@@ -301,8 +319,10 @@ def main():
                 perdio = True
 
             serpiente.comer(comida)
+            tablero.mostrar_contador(serpiente)
 
         tablero.actualizar_pantalla(serpiente, comida, perdio)
+
         reloj.tick(10)
 
     pygame.quit()
