@@ -67,6 +67,21 @@ class botonComenzar(UserControl):
         )
 
 
+class Tablero(UserControl):
+    # Acá lo del tablero dependiendo del numero de letras
+    pass
+
+
+class ComprobarLetra(UserControl):
+    # Acá lo de comprobar la letra
+    pass
+
+
+class listadoPalabras(UserControl):
+    # Acá lo del listado de palabras
+    pass
+
+
 def main(page: Page) -> None:
     page.title = "Wordle the game"
     page.horizontal_alignment = "center"
