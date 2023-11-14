@@ -1,5 +1,19 @@
 import flet as ft
 from flet import *
+from random_spanish_words import Word
+from time import sleep
+from unicodedata import normalize
+
+ROWS = []
+
+
+def store_row(function):
+    def wrapper(*args, **kwargs):
+        res = function(*args, **kwargs)
+        ROWS.append(res)
+        return res
+
+    return wrapper
 
 
 class IncrementCounter(UserControl):
@@ -48,14 +62,18 @@ class botonComenzar(UserControl):
 
     # Crear el tablero de juego
     def comenzar(self, e: ControlEvent) -> None:
+        # Obtener una palabra aleatoria
+        word = Word().Find_Word_By().Len().Run(exact=self.increment_counter.counter)
+        word = normalize("NFKD", word).encode("ASCII", "ignore").decode("ASCII")
         # Eliminar todos los controles actuales en la página
         self.page.clean()
 
-        # Agregar un nuevo control de texto con el mensaje de inicio del juego
-        self.page.add(Text("¡Que comience el juego!", size=40))
-
         # Actualizar la página
         self.page.update()
+        self.page.add(
+            GameGrid(self.increment_counter.counter),
+            GameInput(self.increment_counter.counter, word),
+        )
 
     def build(self) -> Row:
         return Row(
@@ -67,19 +85,140 @@ class botonComenzar(UserControl):
         )
 
 
-class Tablero(UserControl):
-    # Acá lo del tablero dependiendo del numero de letras
-    pass
+class GameInput(UserControl):
+    def __init__(self, numero_letras: int, word: str):
+        super().__init__()
+        self.numero_letras = numero_letras
+        self.word = word
+        self.guesses_remaining = 6  # Número máximo de intentos
+        self.current_line = 0
+        print(self.word)
+
+    def check_word(self, e: ControlEvent) -> None:
+        entered_word = e.control.value
+        print(entered_word)
+
+        if len(entered_word) != self.numero_letras:
+            print("La palabra debe tener {} letras.".format(self.numero_letras))
+            return
+
+        # Verificar si la palabra es correcta
+        if entered_word == self.word:
+            print("¡Ganaste!")
+
+        elif self.current_line >= 5 or self.guesses_remaining <= 0:
+            print("¡Perdiste!")
+
+        else:
+            # Actualizar la interfaz de usuario con los resultados de la adivinanza
+            self.update_ui(entered_word)
+            self.guesses_remaining -= 1
+            self.current_line += 1
+
+    def update_ui(self, entered_word: str) -> None:
+        # Obtener la palabra objetivo como lista de caracteres
+        target_word_list = tuple(self.word)
+        target_word_set = set(target_word_list)
+
+        # Inicializar la fila actual de la interfaz de usuario
+        current_row = ROWS[self.current_line].controls
+
+        for index, box in enumerate(current_row):
+            box.content.value = entered_word[index].upper()
+            box.content.offset = transform.Offset(0, 0)
+            box.content.opacity = 1
+            box.content.color = colors.WHITE
+
+            if entered_word[index] in target_word_set:
+                box.bgcolor = colors.ORANGE
+                if entered_word[index] == target_word_list[index]:
+                    box.bgcolor = colors.GREEN
+
+            sleep(0.3)
+            box.update()
+
+    def build(self):
+        hint_word = TextField(
+            hint_text="Escribe una palabra",
+            on_submit=self.check_word,
+        )
+
+        return Row(
+            controls=[
+                hint_word,
+            ],
+            alignment=MainAxisAlignment.CENTER,
+            width=300,
+        )
 
 
-class ComprobarLetra(UserControl):
-    # Acá lo de comprobar la letra
-    pass
+class GameError(UserControl):
+    # Falta implementar
+    def __init__(self):
+        super().__init__()
 
 
-class listadoPalabras(UserControl):
-    # Acá lo del listado de palabras
-    pass
+class GameGrid(UserControl):
+    def __init__(self, numero_letras: int):
+        super().__init__()
+        self.numero_letras = numero_letras
+
+    @store_row
+    def create_single_row(self):
+        """
+        Crea una fila de letras
+        Eficiencia: O(n) donde n es el numero de letras
+        """
+        row = Row(alignment=MainAxisAlignment.CENTER)
+
+        for i in range(self.numero_letras):
+            row.controls.append(
+                Container(
+                    width=52,
+                    height=52,
+                    border=border.all(0.5, colors.WHITE24),
+                    alignment=alignment.center,
+                    clip_behavior=ClipBehavior.HARD_EDGE,
+                    animate=animation.Animation(300, "decelerate"),
+                    content=Text(
+                        size=20,
+                        weight="bold",
+                        opacity=0,
+                        offset=transform.Offset(0, 0.75),
+                        animate_opacity=animation.Animation(300, "decelerate"),
+                        animate_offset=animation.Animation(300, "decelerate"),
+                    ),
+                )
+            )
+
+        return row
+
+    def build(self):
+        """
+        Crea un tablero de juego con el numero de letras indicado
+        Eficiencia: O(1) porque siempre son 5 filas
+        """
+        Texto = Text("WORDLE", size=40, weight="bold")
+        instrucciones = Text(
+            "Escribe una palabra de {} letras".format(self.numero_letras),
+            size=20,
+            color="gray",
+        )
+
+        rows = [self.create_single_row() for _ in range(5)]
+
+        return Column(
+            alignment=MainAxisAlignment.CENTER,
+            controls=[
+                Row(controls=[Texto], alignment=MainAxisAlignment.CENTER),
+                Row(controls=[instrucciones], alignment=MainAxisAlignment.CENTER),
+                Divider(height=20, color=colors.TRANSPARENT),
+                Column(
+                    alignment=MainAxisAlignment.CENTER,
+                    controls=rows,
+                ),
+            ],
+        )
 
 
 def main(page: Page) -> None:
