@@ -8,6 +8,7 @@ from flet import (
     Container,
     Divider,
     MainAxisAlignment,
+    SnackBar,
 )
 from flet import (
     Page,
@@ -46,10 +47,14 @@ class IncrementCounter(UserControl):
         text (str): El texto que se muestra en el botón.
         counter (int): El contador.
         text_number (Text): El texto que muestra el contador.
+        victories (int): El contador de victorias.
+        defeats (int): El contador de derrotas.
 
     Eficiencia:
         - __init__: O(1)
         - increment: O(1)
+        - increment_victory: O(1)
+        - increment_defeat: O(1)
         - build: O(1)
     """
 
@@ -61,6 +66,8 @@ class IncrementCounter(UserControl):
         self.text = text
         self.counter = start_number
         self.text_number: Text = Text(value=str(start_number), size=40)
+        self.victories = 0
+        self.defeats = 0
 
     def increment(self, e: ControlEvent) -> None:
         """Incrementa el contador y actualiza el texto.
@@ -70,6 +77,14 @@ class IncrementCounter(UserControl):
             self.counter += 1
             self.text_number.value = str(self.counter)
             self.update()
+
+    def increment_victory(self) -> None:
+        """Incrementa el contador de victorias."""
+        self.victories += 1
+
+    def increment_defeat(self) -> None:
+        """Incrementa el contador de derrotas."""
+        self.defeats += 1
 
     def build(self) -> Row:
         """Construye el control.
@@ -116,6 +131,8 @@ class botonComenzar(UserControl):
         """
         # Obtener una palabra aleatoria
         word = Word().Find_Word_By().Len().Run(exact=self.increment_counter.counter)
+        # Crear un nuevo control de error
+        error = GameError()
 
         # Eliminar todos los controles actuales en la página
         self.page.clean()
@@ -124,7 +141,9 @@ class botonComenzar(UserControl):
         self.page.update()
         self.page.add(
             GameGrid(self.increment_counter.counter),
-            GameInput(self.increment_counter.counter, word),
+            GameInput(
+                self.increment_counter.counter, word, self.increment_counter, error
+            ),
         )
 
     def build(self) -> Row:
@@ -134,6 +153,61 @@ class botonComenzar(UserControl):
         return Row(
             controls=[
                 ElevatedButton(self.text, on_click=self.comenzar),
+            ],
+            alignment=MainAxisAlignment.CENTER,
+            width=300,
+        )
+
+
+class botonReiniciar(UserControl):
+    """Un control que muestra un texto y un botón para reiniciar el juego."""
+
+    def __init__(self) -> None:
+        """Inicializa el control.
+        Eficiencia: O(1)
+        """
+        super().__init__()
+
+    def reiniciar(self, e: ControlEvent) -> None:
+        """Reinicia el juego.
+        Eficiencia: O(1)
+        """
+        # Eliminar todos los controles actuales en la página
+        self.page.clean()
+
+        # Reiniciar la lista ROWS
+        global ROWS
+        ROWS = []
+
+        # Actualizar la página
+        self.page.update()
+        main(self.page)
+
+    def build(self) -> Row:
+        """Construye el control.
+        Eficiencia: O(1)
+        """
+        return Row(
+            controls=[
+                ElevatedButton("Reiniciar", on_click=self.reiniciar),
+            ],
+            width=300,
+        )
+
+
+class GameError(UserControl):
+    def __init__(self):
+        super().__init__()
+        self.error_text = Text(size=10, color="red", text_align="center")
+
+    def update(self, message: str):
+        self.error_text.value = message
+        self.error_text.update()
+
+    def build(self):
+        return Row(
+            controls=[
+                self.error_text,
             ],
             alignment=MainAxisAlignment.CENTER,
             width=300,
@@ -156,7 +230,13 @@ class GameInput(UserControl):
         - build: O(1)
     """
 
-    def __init__(self, numero_letras: int, word: str):
+    def __init__(
+        self,
+        numero_letras: int,
+        word: str,
+        increment_counter: IncrementCounter,
+        game_error: GameError,
+    ):
         """Inicializa el control con el número de letras y la palabra a adivinar.
         Eficiencia: O(1)"""
         super().__init__()
@@ -164,26 +244,42 @@ class GameInput(UserControl):
         self.word = word
         self.guesses_remaining = 6  # Número máximo de intentos
         self.current_line = 0
+        self.increment_counter = increment_counter
+        self.error = game_error
+
         print(self.word)
+
+    def texto_victorias_derrotas(self):
+        return Text(
+            "Victorias: {}   |   Derrotas: {}".format(
+                self.increment_counter.victories, self.increment_counter.defeats
+            ),
+            size=18,
+            color="gray",
+            text_align="center",
+        )
 
     def check_word(self, e: ControlEvent) -> None:
         """Verifica si la palabra ingresada es correcta.
         Eficiencia: O(1)"""
         entered_word = e.control.value
-        print(entered_word)
 
         if len(entered_word) != self.numero_letras:
-            self.page.add(
-                GameError("La palabra debe tener {} letras".format(self.numero_letras))
+            self.error.update(
+                "La palabra debe tener {} letras".format(self.numero_letras)
             )
+
             return
 
         elif entered_word not in lemario:
-            self.page.add(GameError("La palabra no existe en el diccionario"))
+            self.error.update("La palabra no existe en el diccionario")
             return
 
         # Verificar si la palabra es correcta
         elif entered_word == self.word:
+            # Incrementar el contador de victorias
+            self.increment_counter.increment_victory()
+
             # Limpiar la página
             self.page.clean()
 
@@ -194,18 +290,28 @@ class GameInput(UserControl):
                     controls=[
                         Text("¡Ganaste!", size=40, weight="bold"),
                         Text("La palabra era {}".format(self.word), size=20),
+                        self.texto_victorias_derrotas(),
+                        botonReiniciar(),
                     ],
                 )
             )
 
         elif self.current_line >= 5 or self.guesses_remaining < 1:
+            # Incrementar el contador de derrotas
+            self.increment_counter.increment_defeat()
+
+            # Limpiar la página
             self.page.clean()
+
+            # Agregar el mensaje de derrota
             self.page.add(
                 Column(
                     alignment=MainAxisAlignment.CENTER,
                     controls=[
                         Text("¡Perdiste!", size=40, weight="bold"),
                         Text("La palabra era {}".format(self.word), size=20),
+                        self.texto_victorias_derrotas(),
+                        botonReiniciar(),
                     ],
                 )
             )
@@ -253,28 +359,10 @@ class GameInput(UserControl):
             on_submit=self.check_word,
         )
 
-        return Row(
+        return Column(
             controls=[
                 hint_word,
-            ],
-            alignment=MainAxisAlignment.CENTER,
-            width=300,
-        )
-
-
-class GameError(UserControl):
-    # Falta implementar
-    def __init__(self, error: str):
-        super().__init__()
-        self.error = error
-
-    def set_error(self):
-        return Text(size=11, weight="bold", color="red", value=self.error)
-
-    def build(self):
-        return Row(
-            controls=[
-                self.set_error(),
+                self.error,
             ],
             alignment=MainAxisAlignment.CENTER,
             width=300,
