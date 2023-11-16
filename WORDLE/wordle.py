@@ -22,12 +22,12 @@ from flet import (
     ClipBehavior,
 )
 
-from Random_Spanish_Words import Word, wordList
+from Random_Spanish_Words import palabra, wordList
 from time import sleep
 from threading import Timer
 
 lemario = set(wordList)
-print(Word().Find_List_By())
+
 ROWS = []
 VICTORIES = 0
 DEFEATS = 0
@@ -132,7 +132,7 @@ class botonComenzar(UserControl):
         Eficiencia: O(1)
         """
         # Obtener una palabra aleatoria
-        word = Word().Find_Word_By().Len().Run(exact=self.increment_counter.counter)
+        word = palabra(self.increment_counter.counter)
         # Crear un nuevo control de error
         error = GameError()
 
