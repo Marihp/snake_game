@@ -24,11 +24,13 @@ from flet import (
 
 from Random_Spanish_Words import Word, wordList
 from time import sleep
-
+from threading import Timer
 
 lemario = set(wordList)
 print(Word().Find_List_By())
 ROWS = []
+VICTORIES = 0
+DEFEATS = 0
 
 
 def store_row(function):
@@ -66,8 +68,6 @@ class IncrementCounter(UserControl):
         self.text = text
         self.counter = start_number
         self.text_number: Text = Text(value=str(start_number), size=40)
-        self.victories = 0
-        self.defeats = 0
 
     def increment(self, e: ControlEvent) -> None:
         """Incrementa el contador y actualiza el texto.
@@ -80,11 +80,13 @@ class IncrementCounter(UserControl):
 
     def increment_victory(self) -> None:
         """Incrementa el contador de victorias."""
-        self.victories += 1
+        global VICTORIES
+        VICTORIES += 1
 
     def increment_defeat(self) -> None:
         """Incrementa el contador de derrotas."""
-        self.defeats += 1
+        global DEFEATS
+        DEFEATS += 1
 
     def build(self) -> Row:
         """Construye el control.
@@ -204,6 +206,15 @@ class GameError(UserControl):
         self.error_text.value = message
         self.error_text.update()
 
+        # Iniciar un temporizador para borrar el mensaje después de 3 segundos (puedes ajustar este valor)
+        timer = Timer(3, self.clear_error)
+        timer.start()
+
+    def clear_error(self):
+        # Borrar el mensaje del error
+        self.error_text.value = ""
+        self.error_text.update()
+
     def build(self):
         return Row(
             controls=[
@@ -251,9 +262,7 @@ class GameInput(UserControl):
 
     def texto_victorias_derrotas(self):
         return Text(
-            "Victorias: {}   |   Derrotas: {}".format(
-                self.increment_counter.victories, self.increment_counter.defeats
-            ),
+            "Victorias: {}   |   Derrotas: {}".format(VICTORIES, DEFEATS),
             size=18,
             color="gray",
             text_align="center",
