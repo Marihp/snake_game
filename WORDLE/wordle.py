@@ -1,9 +1,32 @@
 import flet as ft
-from flet import *
-from random_spanish_words import Word
-from time import sleep
-from unicodedata import normalize
+from flet import (
+    Row,
+    Column,
+    Text,
+    TextField,
+    ElevatedButton,
+    Container,
+    Divider,
+    MainAxisAlignment,
+)
+from flet import (
+    Page,
+    UserControl,
+    ControlEvent,
+    animation,
+    colors,
+    border,
+    alignment,
+    transform,
+    ClipBehavior,
+)
 
+from Random_Spanish_Words import Word, wordList
+from time import sleep
+
+
+lemario = set(wordList)
+print(Word().Find_List_By())
 ROWS = []
 
 
@@ -17,7 +40,18 @@ def store_row(function):
 
 
 class IncrementCounter(UserControl):
-    """Un control que muestra un texto y un botón para incrementar un contador."""
+    """Un control que muestra un texto y un botón para incrementar un contador.
+
+    Atributos:
+        text (str): El texto que se muestra en el botón.
+        counter (int): El contador.
+        text_number (Text): El texto que muestra el contador.
+
+    Eficiencia:
+        - __init__: O(1)
+        - increment: O(1)
+        - build: O(1)
+    """
 
     def __init__(self, text: str, start_number: int = 0) -> None:
         """Inicializa el control con el texto y el número inicial.
@@ -52,19 +86,37 @@ class IncrementCounter(UserControl):
 
 
 class botonComenzar(UserControl):
+    """Un control que muestra un texto y un botón para comenzar el juego.
+
+    Atributos:
+        text (str): El texto que se muestra en el botón.
+        increment_counter (IncrementCounter): El contador.
+        page (Page): La página donde se encuentra el control.
+
+    Eficiencia:
+        - __init__: O(1)
+        - comenzar: O(1)
+        - build: O(1)
+    """
+
     def __init__(
         self, text: str, increment_counter: IncrementCounter, page: Page
     ) -> None:
+        """Inicializa el control con el texto y el número inicial.
+        Eficiencia: O(1)
+        """
         super().__init__()
         self.text = text
         self.increment_counter = increment_counter
         self.page = page
 
-    # Crear el tablero de juego
     def comenzar(self, e: ControlEvent) -> None:
+        """Comienza el juego.
+        Eficiencia: O(1)
+        """
         # Obtener una palabra aleatoria
         word = Word().Find_Word_By().Len().Run(exact=self.increment_counter.counter)
-        word = normalize("NFKD", word).encode("ASCII", "ignore").decode("ASCII")
+
         # Eliminar todos los controles actuales en la página
         self.page.clean()
 
@@ -76,6 +128,9 @@ class botonComenzar(UserControl):
         )
 
     def build(self) -> Row:
+        """Construye el control.
+        Eficiencia: O(1)
+        """
         return Row(
             controls=[
                 ElevatedButton(self.text, on_click=self.comenzar),
@@ -86,7 +141,24 @@ class botonComenzar(UserControl):
 
 
 class GameInput(UserControl):
+    """Entrada de texto para adivinar la palabra y lógica del juego.
+
+    Atributos:
+        numero_letras (int): El número de letras de la palabra a adivinar.
+        word (str): La palabra a adivinar.
+        guesses_remaining (int): El número de intentos restantes.
+        current_line (int): La línea actual de la interfaz de usuario.
+
+    Eficiencia:
+        - __init__: O(1)
+        - check_word: O(1)
+        - update_ui: O(n) donde n es el número de letras
+        - build: O(1)
+    """
+
     def __init__(self, numero_letras: int, word: str):
+        """Inicializa el control con el número de letras y la palabra a adivinar.
+        Eficiencia: O(1)"""
         super().__init__()
         self.numero_letras = numero_letras
         self.word = word
@@ -95,27 +167,65 @@ class GameInput(UserControl):
         print(self.word)
 
     def check_word(self, e: ControlEvent) -> None:
+        """Verifica si la palabra ingresada es correcta.
+        Eficiencia: O(1)"""
         entered_word = e.control.value
         print(entered_word)
 
         if len(entered_word) != self.numero_letras:
-            print("La palabra debe tener {} letras.".format(self.numero_letras))
+            self.page.add(
+                GameError("La palabra debe tener {} letras".format(self.numero_letras))
+            )
+            return
+
+        elif entered_word not in lemario:
+            self.page.add(GameError("La palabra no existe en el diccionario"))
             return
 
         # Verificar si la palabra es correcta
-        if entered_word == self.word:
-            print("¡Ganaste!")
+        elif entered_word == self.word:
+            # Limpiar la página
+            self.page.clean()
 
-        elif self.current_line >= 5 or self.guesses_remaining <= 0:
-            print("¡Perdiste!")
+            # Agregar el mensaje de victoria
+            self.page.add(
+                Column(
+                    alignment=MainAxisAlignment.CENTER,
+                    controls=[
+                        Text("¡Ganaste!", size=40, weight="bold"),
+                        Text("La palabra era {}".format(self.word), size=20),
+                    ],
+                )
+            )
+
+        elif self.current_line >= 5 or self.guesses_remaining < 1:
+            self.page.clean()
+            self.page.add(
+                Column(
+                    alignment=MainAxisAlignment.CENTER,
+                    controls=[
+                        Text("¡Perdiste!", size=40, weight="bold"),
+                        Text("La palabra era {}".format(self.word), size=20),
+                    ],
+                )
+            )
 
         else:
             # Actualizar la interfaz de usuario con los resultados de la adivinanza
             self.update_ui(entered_word)
+
+            # Limpiar la entrada de texto
+            e.control.value = ""
+            e.control.update()
+
+            # Actualizar el número de intentos restantes
             self.guesses_remaining -= 1
             self.current_line += 1
 
     def update_ui(self, entered_word: str) -> None:
+        """Actualiza la interfaz de usuario con los resultados de la adivinanza.
+        Eficiencia: O(n) donde n es el número de letras"""
+
         # Obtener la palabra objetivo como lista de caracteres
         target_word_list = tuple(self.word)
         target_word_set = set(target_word_list)
@@ -154,11 +264,35 @@ class GameInput(UserControl):
 
 class GameError(UserControl):
     # Falta implementar
-    def __init__(self):
+    def __init__(self, error: str):
         super().__init__()
+        self.error = error
+
+    def set_error(self):
+        return Text(size=11, weight="bold", color="red", value=self.error)
+
+    def build(self):
+        return Row(
+            controls=[
+                self.set_error(),
+            ],
+            alignment=MainAxisAlignment.CENTER,
+            width=300,
+        )
 
 
 class GameGrid(UserControl):
+    """Tablero de juego.
+
+    Atributos:
+        numero_letras (int): El número de letras de la palabra a adivinar.
+
+    Eficiencia:
+        - __init__: O(1)
+        - create_single_row: O(n) donde n es el numero de letras
+        - build: O(1)
+    """
+
     def __init__(self, numero_letras: int):
         super().__init__()
         self.numero_letras = numero_letras
